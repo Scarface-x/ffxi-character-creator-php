@@ -67,11 +67,6 @@ $raceId = $_SESSION['new_character']['race'] ?? null;
 $appearanceId = $_SESSION['new_character']['appearance'] ?? null;
 $sizeId = $_SESSION['new_character']['size'] ?? null;
 
-if (!$raceId || !$appearanceId || !$sizeId) {
-    header("Location: select_race.php");
-    exit();
-}
-
 // Handle job selection
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['job_id'])) {
     $_SESSION['new_character']['job'] = $_POST['job_id']; // Store selected job in session
