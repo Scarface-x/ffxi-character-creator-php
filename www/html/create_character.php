@@ -22,14 +22,6 @@ if (!isset($_SESSION['user_id'])) {
 $accountId = $_SESSION['user_id'];
 $maxCharacters = getMaxCharacters($accountId);
 $characterCount = getCharacterCount($accountId);
-
-// Define valid ID ranges
-$validRaces = range(1, 8);
-$validJobs = range(1, 6);
-$validNations = range(0, 2);
-$validAppearances = range(0, 15);
-$validSizes = range(0, 2);
-
 $error = null;
 
 // Check max character limit
