@@ -29,32 +29,55 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['selected_charid'])) {
 <head>
     <title>Dashboard</title>
     <style>
-        body { 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            flex-direction: column; 
-            text-align: center; 
-            font-family: Arial, sans-serif; 
-            margin: 0; 
-            padding: 0; 
-            min-height: 100vh; 
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            text-align: center;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
             background-color: <?= BACKGROUND_COLOUR ?>;
             color: <?= TEXT_COLOUR ?>;
         }
-        .logout-link { 
-            position: fixed; 
-            top: 20px; 
-            right: 20px; 
-            text-decoration: none; 
-            font-weight: bold; 
+
+        .hidden {
+            display: none;
+        }
+
+        .preloader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            font-size: 1.5em;
+            color: white;
+            font-weight: bold;
+        }
+
+        .logout-link {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            text-decoration: none;
+            font-weight: bold;
             color: <?= BORDER_COLOUR ?>;
         }
-        .main-content { 
+
+        .main-content {
             margin-top: -110px;
             width: 100%;
             max-width: 800px;
         }
+
         .dashboard-title {
             display: inline-block;
             border: 2px solid <?= BORDER_COLOUR ?>;
@@ -70,17 +93,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['selected_charid'])) {
             font-weight: bold;
             height: 40px;
         }
-        .character-container { 
-            display: flex; 
-            flex-wrap: wrap; 
-            gap: 20px; 
-            list-style-type: none; 
-            padding: 0; 
-            justify-content: center; 
-            margin-top: 0px; 
+
+        .character-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            list-style-type: none;
+            padding: 0;
+            justify-content: center;
+            margin-top: 0px;
         }
-        .character-item { 
-            text-align: center; 
+
+        .character-item {
+            text-align: center;
             width: 170px;
             border: 2px solid <?= BORDER_COLOUR ?>;
             padding: 15px;
@@ -92,32 +117,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['selected_charid'])) {
             height: 295px;
             overflow: visible;
         }
-        .character-item img { 
+
+        .character-item img {
             position: relative;
-            top: 15px; 
+            top: 15px;
             display: block;
             width: 100%;
             height: auto;
             border-radius: 4px;
         }
+
         .character-item button {
-			width: 100%;
-			padding: 6px 10px;
-			background-color: <?= BUTTON_COLOUR ?>;
-			color: <?= BUTTON_TEXT_COLOUR ?>;
-			border: none;
-			border-radius: 4px;
-			cursor: pointer;
-			font-weight: bold;
-			font-size: 1em;
-			display: block;
-			position: relative; 
-			top: 10px;
-		}
+            width: 100%;
+            padding: 6px 10px;
+            background-color: <?= BUTTON_COLOUR ?>;
+            color: <?= BUTTON_TEXT_COLOUR ?>;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1em;
+            display: block;
+            position: relative;
+            top: 10px;
+        }
 
         .character-item button:hover {
             background-color: <?= BUTTON_HOVER_COLOUR ?>;
         }
+
         .create-character-btn {
             padding: 6px 20px;
             background-color: <?= BUTTON_COLOUR ?>;
@@ -130,16 +158,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['selected_charid'])) {
             text-decoration: none;
             display: inline-block;
         }
+
         .create-character-btn:hover {
             background-color: <?= BUTTON_HOVER_COLOUR ?>;
         }
+
         .character-item strong {
             position: relative;
             top: -5px;
         }
+
         .character-item p {
             margin: 0;
         }
+
         .error-message {
             color: <?= ERROR_COLOUR ?>;
             font-weight: bold;
@@ -147,8 +179,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['selected_charid'])) {
     </style>
 </head>
 <body>
+    <div class="preloader" id="preloader">Loading...</div>
+
     <a href="logout.php" class="logout-link">Logout</a>
-    <div class="main-content">
+    <div class="main-content" id="main-content">
         <div class="dashboard-title">Active Characters</div>
 
         <?php if ($currentCharacterCount > 0): ?>
@@ -183,11 +217,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['selected_charid'])) {
                         </form>
                         <!-- Gil Display -->
                         <div style="display: flex; align-items: center; justify-content: center; margin-top: 10px;">
-							<img src="<?= $gilImage ?>" alt="Gil" style="width: 24px; height: 24px; margin-right: 8px;">
-							<span style="font-size: 1.2em; font-weight: bold; color: <?= TEXT_COLOUR ?>; position: relative; top: 15px;">
-								<?= $formattedGil ?>
-							</span>
-						</div>
+                            <img src="<?= $gilImage ?>" alt="Gil" style="width: 24px; height: 24px; margin-right: 8px;">
+                            <span style="font-size: 1.2em; font-weight: bold; color: <?= TEXT_COLOUR ?>; position: relative; top: 15px;">
+                                <?= $formattedGil ?>
+                            </span>
+                        </div>
 
                         <form action="delete_character.php" method="POST">
                             <input type="hidden" name="charid" value="<?= htmlspecialchars($character['charid']) ?>">
@@ -206,5 +240,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['selected_charid'])) {
             <p class="error-message">You have reached the maximum number of characters (<?= $maxCharacters ?>).</p>
         <?php endif; ?>
     </div>
+
+    <script>
+        const preloader = document.getElementById('preloader');
+        const mainContent = document.getElementById('main-content');
+        const images = document.querySelectorAll('.character-item img');
+
+        let loadedImages = 0;
+
+        images.forEach(img => {
+            img.onload = () => {
+                loadedImages++;
+                if (loadedImages === images.length) {
+                    preloader.style.display = 'none';
+                    mainContent.style.display = 'block';
+                }
+            };
+            img.onerror = () => {
+                loadedImages++;
+                if (loadedImages === images.length) {
+                    preloader.style.display = 'none';
+                    mainContent.style.display = 'block';
+                }
+            };
+        });
+
+        if (images.length === 0) {
+            preloader.style.display = 'none';
+            mainContent.style.display = 'block';
+        }
+    </script>
 </body>
 </html>

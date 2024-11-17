@@ -62,7 +62,7 @@ if ($limitReached) {
     exit();
 }
 
-// Retrieve session data for job selection
+// Retrieve session data for job selection (no validity checks)
 $raceId = $_SESSION['new_character']['race'] ?? null;
 $appearanceId = $_SESSION['new_character']['appearance'] ?? null;
 $sizeId = $_SESSION['new_character']['size'] ?? null;
@@ -70,7 +70,7 @@ $sizeId = $_SESSION['new_character']['size'] ?? null;
 // Handle job selection
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['job_id'])) {
     $_SESSION['new_character']['job'] = $_POST['job_id']; // Store selected job in session
-    header("Location: select_nation.php");
+    header("Location: select_nation.php"); // Redirect to the next step
     exit();
 }
 ?>
@@ -95,6 +95,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['job_id'])) {
             position: relative;
         }
 
+        .preloader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            font-size: 1.5em;
+            color: white;
+            font-weight: bold;
+        }
+
         .logout-link {
             position: absolute;
             top: 20px;
@@ -105,7 +121,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['job_id'])) {
         }
 
         .main-container {
-            display: flex;
+            display: none; /* Hidden until images are preloaded */
             flex-direction: column;
             align-items: center;
             justify-content: center;
@@ -172,6 +188,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['job_id'])) {
     </style>
 </head>
 <body>
+    <div class="preloader" id="preloader">Loading...</div>
+
     <a href="logout.php" class="logout-link">Logout</a>
 
     <div class="main-container">
@@ -180,7 +198,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['job_id'])) {
         <form method="POST">
             <div class="job-grid">
                 <?php foreach ($jobs as $jobID => $job): ?>
-                    <?php if ($jobID >= 1 && $jobID <= 6): ?>
+                    <?php if ($jobID >= 1 && $jobID <= 6): ?> <!-- Keep range check here -->
                         <button type="submit" name="job_id" value="<?= htmlspecialchars($jobID) ?>" class="job-item">
                             <p><?= htmlspecialchars($job['full_name']) ?></p>
                             <img src="/images/jobs/<?= htmlspecialchars(strtolower($job['abbreviation'])) ?>.jpg" alt="<?= htmlspecialchars($job['full_name']) ?>">
@@ -190,5 +208,44 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['job_id'])) {
             </div>
         </form>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const preloader = document.getElementById('preloader');
+            const mainContainer = document.querySelector('.main-container');
+            const images = document.querySelectorAll('.job-item img');
+
+            let loadedImages = 0;
+
+            const checkImagesLoaded = () => {
+                if (loadedImages === images.length) {
+                    preloader.style.display = 'none';
+                    mainContainer.style.display = 'flex';
+                }
+            };
+
+            if (images.length === 0) {
+                preloader.style.display = 'none';
+                mainContainer.style.display = 'flex';
+                return;
+            }
+
+            images.forEach((img) => {
+                img.onload = () => {
+                    loadedImages++;
+                    checkImagesLoaded();
+                };
+                img.onerror = () => {
+                    loadedImages++;
+                    checkImagesLoaded();
+                };
+
+                if (img.complete) {
+                    loadedImages++;
+                    checkImagesLoaded();
+                }
+            });
+        });
+    </script>
 </body>
 </html>

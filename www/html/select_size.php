@@ -39,6 +39,7 @@ if ($limitReached) {
             }
             .error-container {
                 border: 2px solid <?= ERROR_COLOUR ?>;
+                background-color: <?= BOX_BACKGROUND_COLOUR ?>;
                 padding: 20px;
                 border-radius: 8px;
                 max-width: 500px;
@@ -60,16 +61,11 @@ if ($limitReached) {
     exit();
 }
 
-// Retrieve session data
+// Retrieve session data (no checks for validity)
 $raceId = $_SESSION['new_character']['race'] ?? null;
 $appearanceId = $_SESSION['new_character']['appearance'] ?? null;
 
-if (!$raceId || !$appearanceId) {
-    header("Location: select_race.php");
-    exit();
-}
-
-// Determine gender based on race
+// Determine gender based on race (assuming `getGenderByRace` handles null gracefully)
 $gender = getGenderByRace($raceId);
 
 // Update the sizes map dynamically to assign the correct images
@@ -108,6 +104,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['size_id'])) {
             position: relative;
         }
 
+        .preloader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            font-size: 1.5em;
+            color: white;
+            font-weight: bold;
+        }
+
         .logout-link {
             position: absolute;
             top: 20px;
@@ -118,7 +130,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['size_id'])) {
         }
 
         .main-container {
-            display: flex;
+            display: none; /* Hidden until images are preloaded */
             flex-direction: column;
             align-items: center;
             justify-content: center;
@@ -186,6 +198,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['size_id'])) {
     </style>
 </head>
 <body>
+    <div class="preloader" id="preloader">Loading...</div>
+
     <a href="logout.php" class="logout-link">Logout</a>
 
     <div class="main-container">
@@ -202,5 +216,44 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['size_id'])) {
             </div>
         </form>
     </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const preloader = document.getElementById('preloader');
+            const mainContainer = document.querySelector('.main-container');
+            const images = document.querySelectorAll('.size-item img');
+
+            let loadedImages = 0;
+
+            const checkImagesLoaded = () => {
+                if (loadedImages === images.length) {
+                    preloader.style.display = 'none';
+                    mainContainer.style.display = 'flex';
+                }
+            };
+
+            if (images.length === 0) {
+                preloader.style.display = 'none';
+                mainContainer.style.display = 'flex';
+                return;
+            }
+
+            images.forEach((img) => {
+                img.onload = () => {
+                    loadedImages++;
+                    checkImagesLoaded();
+                };
+                img.onerror = () => {
+                    loadedImages++;
+                    checkImagesLoaded();
+                };
+
+                if (img.complete) {
+                    loadedImages++;
+                    checkImagesLoaded();
+                }
+            });
+        });
+    </script>
 </body>
 </html>

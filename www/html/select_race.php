@@ -94,6 +94,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['race_id'])) {
             position: relative;
         }
 
+        .preloader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            font-size: 1.5em;
+            color: white;
+            font-weight: bold;
+        }
+
         .logout-link {
             position: absolute;
             top: 20px;
@@ -104,7 +120,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['race_id'])) {
         }
 
         .main-container {
-            display: flex;
+            display: none; /* Initially hidden */
             flex-direction: column;
             align-items: center;
             justify-content: center;
@@ -171,6 +187,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['race_id'])) {
     </style>
 </head>
 <body>
+    <div class="preloader" id="preloader">Loading...</div>
+
     <a href="logout.php" class="logout-link">Logout</a>
 
     <div class="main-container">
@@ -184,11 +202,50 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['race_id'])) {
                     ?>
                     <button type="submit" name="race_id" value="<?= htmlspecialchars($raceId) ?>" class="race-item">
                         <p><?= htmlspecialchars($raceData['name']); ?></p>
-                        <img src="<?= $imagePath ?>" alt="<?= htmlspecialchars($raceData['name']); ?>" loading="lazy">
+                        <img src="<?= $imagePath ?>" alt="<?= htmlspecialchars($raceData['name']); ?>">
                     </button>
                 <?php endforeach; ?>
             </div>
         </form>
     </div>
+
+    <script>
+        const preloader = document.getElementById('preloader');
+        const mainContainer = document.querySelector('.main-container');
+        const images = document.querySelectorAll('.race-item img');
+
+        let loadedImages = 0;
+
+        const checkImagesLoaded = () => {
+            if (loadedImages === images.length) {
+                preloader.style.display = 'none';
+                mainContainer.style.display = 'flex';
+            }
+        };
+
+        if (images.length === 0) {
+            // If no images, show content immediately
+            preloader.style.display = 'none';
+            mainContainer.style.display = 'flex';
+        } else {
+            images.forEach((img) => {
+                img.onload = () => {
+                    loadedImages++;
+                    checkImagesLoaded();
+                };
+                img.onerror = () => {
+                    console.error(`Failed to load: ${img.src}`);
+                    loadedImages++;
+                    checkImagesLoaded();
+                };
+
+                // Handle cached images
+                if (img.complete) {
+                    loadedImages++;
+                    checkImagesLoaded();
+                }
+            });
+        }
+    </script>
 </body>
 </html>

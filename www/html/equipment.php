@@ -1,6 +1,4 @@
 <?php
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
 session_start();
 require '/var/includes/functions.php';
 include '/var/includes/race.php';
@@ -42,12 +40,32 @@ foreach ($slotMap as $slotId => $slotName) {
 $nationName = getNationNameByCharId($conn, $character['charid']);
 $nationId = array_search($nationName, array_column($nations, 'name')); 
 $nationRank = getNationRank($conn, $charid, $nationId);
+
+// Preload images
+$raceKey = htmlspecialchars($races[$character['race']]['key']);
+$faceKey = htmlspecialchars($appearanceMap[$character['face']]);
+$imagePath = "/images/races/$raceKey/$faceKey.jpg";
+
+$gilImage = "https://static.ffxiah.com/images/icon/65535.png";
+$itemImages = [];
+foreach ($slotMap as $slotId => $slotName) {
+    $item = $equipment[$slotId];
+    if ($item && $item['itemId'] && $item['itemId'] != 65535) {
+        $itemData = fetchItemData($item['itemId'], $conn);
+        $itemImages[] = $itemData['image'];
+    }
+}
 ?>
 
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <title>Character Equipment</title>
+    <link rel="preload" href="<?= $imagePath ?>" as="image">
+    <link rel="preload" href="<?= $gilImage ?>" as="image">
+    <?php foreach ($itemImages as $itemImage): ?>
+        <link rel="preload" href="<?= htmlspecialchars($itemImage) ?>" as="image">
+    <?php endforeach; ?>
     <style>
         body {
             display: flex;
@@ -173,34 +191,18 @@ $nationRank = getNationRank($conn, $charid, $nationId);
 
         <div class="character-container">
             <div class="character-item">
-                <?php
-                $raceKey = htmlspecialchars($races[$character['race']]['key']);
-                $faceKey = htmlspecialchars($appearanceMap[$character['face']]);
-                $imagePath = "/images/races/$raceKey/$faceKey.jpg";
-                ?>
-                <!-- Adjusted Positions -->
                 <strong style="position: relative; top: -5px;"><?= htmlspecialchars($character['charname']) ?></strong>
                 <p style="position: relative; top: -15px;"><?= htmlspecialchars($character['job_level']) ?></p>
                 <p style="position: relative; top: -25px;">
                     Nation: <?= htmlspecialchars($nationName) ?> [<?= $nationRank ?? 'Unknown' ?>]
                 </p>
-
-                <!-- Adjust Image Position -->
                 <img src="<?= $imagePath ?>" alt="Character Image">
-
-                <!-- Gil Display -->
-				<div style="display: flex; align-items: center; margin-top: 10px; justify-content: center;">
-					<?php
-					$gilAmount = getCharacterGil($conn, $charid);
-					$formattedGil = number_format($gilAmount);
-					$gilImage = "https://static.ffxiah.com/images/icon/65535.png"; 
-					?>
-					<img src="<?= $gilImage ?>" alt="Gil" style="width: 24px; height: 24px; margin-right: 8px; position: relative; top: -30px;">
-					<span style="font-size: 1.2em; font-weight: bold; color: <?= TEXT_COLOUR ?>; position: relative; top: -30px;">
-						<?= $formattedGil ?>
-					</span>
-				</div>
-
+                <div style="display: flex; align-items: center; margin-top: 10px; justify-content: center;">
+                    <img src="<?= $gilImage ?>" alt="Gil" style="width: 24px; height: 24px; margin-right: 8px; position: relative; top: -30px;">
+                    <span style="font-size: 1.2em; font-weight: bold; color: <?= TEXT_COLOUR ?>; position: relative; top: -30px;">
+                        <?= number_format(getCharacterGil($conn, $charid)) ?>
+                    </span>
+                </div>
             </div>
         </div>
         <div class="grid-container">
@@ -227,18 +229,18 @@ $nationRank = getNationRank($conn, $charid, $nationId);
 
                 foreach ($slotOrder as $slotId => $slotName):
                 ?>
-                    <?php
-                    $item = $equipment[$slotId];
-                    $image = null;
-                    $hoverText = $slotName;
-
-                    if ($item && $item['itemId'] && $item['itemId'] != 65535) {
-                        $itemData = fetchItemData($item['itemId'], $conn);
-                        $image = $itemData['image'];
-                        $hoverText = $itemData['name'];
-                    }
-                    ?>
                     <div class="equipment-slot">
+                        <?php
+                        $item = $equipment[$slotId];
+                        $image = null;
+                        $hoverText = $slotName;
+
+                        if ($item && $item['itemId'] && $item['itemId'] != 65535) {
+                            $itemData = fetchItemData($item['itemId'], $conn);
+                            $image = $itemData['image'];
+                            $hoverText = $itemData['name'];
+                        }
+                        ?>
                         <?php if ($image): ?>
                             <a href="https://www.ffxiah.com/item/<?= htmlspecialchars($item['itemId']) ?>" target="_blank">
                                 <img src="<?= htmlspecialchars($image) ?>" alt="<?= htmlspecialchars($slotName) ?>" title="<?= htmlspecialchars($hoverText) ?>">

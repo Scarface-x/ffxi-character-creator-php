@@ -23,65 +23,84 @@ $accountId = $_SESSION['user_id'];
 $maxCharacters = getMaxCharacters($accountId);
 $characterCount = getCharacterCount($accountId);
 
-// Redirect if character limit is reached
+// Define valid ID ranges
+$validRaces = range(1, 8);
+$validJobs = range(1, 6);
+$validNations = range(0, 2);
+$validAppearances = range(0, 15);
+$validSizes = range(0, 2);
+
+$error = null;
+
+// Check max character limit
 if ($characterCount >= $maxCharacters) {
-    header("Location: dashboard.php?error=max_characters");
-    exit();
+    $error = "You have reached the maximum number of characters allowed.";
 }
 
 // Validate session data for character creation
-if (
-    !isset($_SESSION['new_character']['race'], $_SESSION['new_character']['appearance'], 
+if (!isset($_SESSION['new_character']['race'], $_SESSION['new_character']['appearance'], 
           $_SESSION['new_character']['job'], $_SESSION['new_character']['nation'], 
-          $_SESSION['new_character']['size'])
-) {
-    header("Location: select_race.php"); // Redirect to start of creation process
-    exit();
+          $_SESSION['new_character']['size'])) {
+    $error = "Incomplete character creation data. Please restart the process.";
+} else {
+    // Extract and validate each selection
+    $raceId = $_SESSION['new_character']['race'];
+    $appearanceId = $_SESSION['new_character']['appearance'];
+    $jobId = $_SESSION['new_character']['job'];
+    $nationId = $_SESSION['new_character']['nation'];
+    $sizeId = $_SESSION['new_character']['size'];
+
+    if (
+        !in_array($raceId, $validRaces) ||
+        !in_array($appearanceId, $validAppearances) ||
+        !in_array($jobId, $validJobs) ||
+        !in_array($nationId, $validNations) ||
+        !in_array($sizeId, $validSizes)
+    ) {
+        $error = "Invalid character data provided. Please verify your selections.";
+    }
 }
 
-// Extract details for display
-$raceId = $_SESSION['new_character']['race'];
-$appearanceId = $_SESSION['new_character']['appearance'];
-$jobId = $_SESSION['new_character']['job'];
-$nationId = $_SESSION['new_character']['nation'];
-$sizeId = $_SESSION['new_character']['size'];
+// Only proceed if no errors
+if (!$error) {
+    // Extract details for display
+    $race = $races[$raceId];
+    $raceName = $race['name'];
+    $appearanceText = $appearanceMap[$appearanceId];
+    $job = $jobs[$jobId];
+    $nation = $nations[$nationId];
+    $sizeText = $sizes[$sizeId]['size'];
 
-$race = $races[$raceId];
-$raceName = $race['name'];
-$appearanceText = $appearanceMap[$appearanceId];
-$job = $jobs[$jobId];
-$nation = $nations[$nationId];
-$sizeText = $sizes[$sizeId]['size'];
+    $nameError = null;
 
-$nameError = null;
+    // Handle form submission
+    if ($_SERVER["REQUEST_METHOD"] === "POST") {
+        $charname = ucfirst(strtolower(trim($_POST['charname'])));
 
-// Handle form submission
-if ($_SERVER["REQUEST_METHOD"] === "POST") {
-    $charname = ucfirst(strtolower(trim($_POST['charname'])));
+        if (!validateCharacterName($charname)) {
+            $nameError = "Invalid character name. Only letters allowed, between 3 and 16 characters.";
+        } elseif (isCharacterNameTaken($charname)) {
+            $nameError = "A character with that name already exists.";
+        } else {
+            $charid = getNextCharacterId();
+            $conn->begin_transaction();
+            try {
+                insertCharacter($charid, $accountId, $charname, $nationId, $nation['zones'][0]);
+                insertCharacterLook($charid, $appearanceId, $raceId, $sizeId);
+                insertCharacterStats($charid, $jobId);
 
-    if (!validateCharacterName($charname)) {
-        $nameError = "Invalid character name. Only letters allowed, between 3 and 16 characters.";
-    } elseif (isCharacterNameTaken($charname)) {
-        $nameError = "A character with that name already exists.";
-    } else {
-        $charid = getNextCharacterId();
-        $conn->begin_transaction();
-        try {
-            insertCharacter($charid, $accountId, $charname, $nationId, $nation['zones'][0]);
-            insertCharacterLook($charid, $appearanceId, $raceId, $sizeId);
-            insertCharacterStats($charid, $jobId);
+                $conn->commit();
 
-            $conn->commit();
+                // Clear session data for new character creation
+                unset($_SESSION['new_character']);
 
-            // Clear session data for new character creation
-            unset($_SESSION['new_character']);
-
-            // Redirect to dashboard after successful creation
-            header("Location: dashboard.php?success=character_created");
-            exit();
-        } catch (Exception $e) {
-            $conn->rollback();
-            $nameError = "Error creating character: " . htmlspecialchars($e->getMessage());
+                // Redirect to dashboard after successful creation
+                header("Location: dashboard.php?success=character_created");
+                exit();
+            } catch (Exception $e) {
+                $conn->rollback();
+                $nameError = "Error creating character: " . htmlspecialchars($e->getMessage());
+            }
         }
     }
 }
@@ -142,6 +161,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             font-weight: bold;
             height: 40px;
             width: fit-content;
+        }
+
+        .error-message {
+            color: <?= ERROR_COLOUR ?>;
+            font-size: 1em;
+            font-weight: bold;
+            margin-bottom: 20px;
         }
 
         .selection-info {
@@ -225,21 +251,25 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     <div class="main-container">
         <div class="title-container">Name Your Character</div>
 
-        <div class="selection-info">
-            <p>Race: <?= htmlspecialchars($raceName) ?></p>
-            <p>Size: <?= htmlspecialchars($sizeText) ?></p>
-            <p>Job: <?= htmlspecialchars($job['full_name']) ?></p>
-            <p>Nation: <?= htmlspecialchars($nation['name']) ?></p>
-            <img src="/images/races/<?= htmlspecialchars($race['key']) ?>/<?= htmlspecialchars($appearanceText) ?>.jpg" alt="Selected Appearance">
-        </div>
+        <?php if ($error): ?>
+            <div class="error-message"><?= htmlspecialchars($error) ?></div>
+        <?php else: ?>
+            <div class="selection-info">
+                <p>Race: <?= htmlspecialchars($raceName) ?></p>
+                <p>Size: <?= htmlspecialchars($sizeText) ?></p>
+                <p>Job: <?= htmlspecialchars($job['full_name']) ?></p>
+                <p>Nation: <?= htmlspecialchars($nation['name']) ?></p>
+                <img src="/images/races/<?= htmlspecialchars($race['key']) ?>/<?= htmlspecialchars($appearanceText) ?>.jpg" alt="Selected Appearance">
+            </div>
 
-        <form method="POST">
-            <input type="text" name="charname" maxlength="16" placeholder="Enter character name" required>
-            <button type="submit">Create Character</button>
-            <?php if ($nameError): ?>
-                <div class="name-exists-error"><?= htmlspecialchars($nameError) ?></div>
-            <?php endif; ?>
-        </form>
+            <form method="POST">
+                <input type="text" name="charname" maxlength="16" placeholder="Enter character name" required>
+                <button type="submit">Create Character</button>
+                <?php if ($nameError): ?>
+                    <div class="name-exists-error"><?= htmlspecialchars($nameError) ?></div>
+                <?php endif; ?>
+            </form>
+        <?php endif; ?>
     </div>
 </body>
 </html>

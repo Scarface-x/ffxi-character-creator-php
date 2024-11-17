@@ -69,13 +69,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['appearance_id'])) {
 
 // Race data for appearance selection
 $raceId = $_SESSION['new_character']['race'] ?? null;
-$race = $races[$raceId] ?? null;
-
-if (!$race) {
-    header("Location: select_race.php");
-    exit();
-}
-
+$race = $races[$raceId];
 $raceDirectory = $race['key'];
 $raceName = $race['name'];
 ?>
@@ -83,6 +77,8 @@ $raceName = $race['name'];
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Appearance Selection</title>
     <style>
         body {
@@ -100,6 +96,22 @@ $raceName = $race['name'];
             position: relative;
         }
 
+        .preloader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            font-size: 1.5em;
+            color: white;
+            font-weight: bold;
+        }
+
         .logout-link {
             position: absolute;
             top: 20px;
@@ -110,7 +122,7 @@ $raceName = $race['name'];
         }
 
         .main-container {
-            display: flex;
+            display: none; /* Hidden until images are preloaded */
             flex-direction: column;
             align-items: center;
             justify-content: center;
@@ -177,6 +189,8 @@ $raceName = $race['name'];
     </style>
 </head>
 <body>
+    <div class="preloader" id="preloader">Loading...</div>
+
     <a href="logout.php" class="logout-link">Logout</a>
 
     <div class="main-container">
@@ -190,11 +204,56 @@ $raceName = $race['name'];
                     ?>
                     <button type="submit" name="appearance_id" value="<?= htmlspecialchars($id) ?>" class="appearance-item">
                         <p>Face <?= htmlspecialchars($text) ?></p>
-                        <img src="<?= $imagePath ?>" alt="Face <?= htmlspecialchars($text) ?>" loading="lazy">
+                        <img src="<?= $imagePath ?>" alt="Face <?= htmlspecialchars($text) ?>">
                     </button>
                 <?php endforeach; ?>
             </div>
         </form>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const preloader = document.getElementById('preloader');
+            const mainContainer = document.querySelector('.main-container');
+            const images = document.querySelectorAll('.appearance-item img');
+
+            let loadedImages = 0;
+
+            const checkImagesLoaded = () => {
+                if (loadedImages === images.length) {
+                    console.log("All images loaded");
+                    preloader.style.display = 'none';
+                    mainContainer.style.display = 'flex';
+                }
+            };
+
+            if (images.length === 0) {
+                console.log("No images to load");
+                preloader.style.display = 'none';
+                mainContainer.style.display = 'flex';
+                return;
+            }
+
+            images.forEach((img) => {
+                console.log(`Loading image: ${img.src}`);
+                img.onload = () => {
+                    loadedImages++;
+                    checkImagesLoaded();
+                };
+                img.onerror = () => {
+                    console.error(`Failed to load: ${img.src}`);
+                    loadedImages++;
+                    checkImagesLoaded();
+                };
+
+                // Handle cached images
+                if (img.complete) {
+                    console.log(`Cached image loaded: ${img.src}`);
+                    loadedImages++;
+                    checkImagesLoaded();
+                }
+            });
+        });
+    </script>
 </body>
 </html>
