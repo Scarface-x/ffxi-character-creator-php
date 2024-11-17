@@ -224,26 +224,51 @@ function getNationRank($conn, $charId, $nationId) {
     return null;
 }
 
-
 function disassociateCharacter($accountId, $charId) {
-    global $conn;
+    global $conn, $daystodelete;
 
-    // Check if the character belongs to the logged-in account
-    $stmt = $conn->prepare("SELECT charid FROM chars WHERE charid = ? AND accid = ?");
+    // Debug: Log the value of $daystodelete
+    error_log("Daystodelete value: $daystodelete");
+
+    // Convert $daystodelete to seconds
+    $requiredAgeInSeconds = $daystodelete * 86400;
+
+    // Check the character's creation time
+    $stmt = $conn->prepare("SELECT timecreated FROM chars WHERE charid = ? AND accid = ?");
     $stmt->bind_param("ii", $charId, $accountId);
     $stmt->execute();
-    $stmt->store_result();
+    $stmt->bind_result($timeCreated);
+    $stmt->fetch();
+    $stmt->close();
 
-    if ($stmt->num_rows === 0) {
-        $stmt->close();
+    if (!$timeCreated) {
         return "Character not found or does not belong to your account.";
     }
-    $stmt->close();
+
+    // Calculate the age of the character in seconds
+    $timeCreatedTimestamp = strtotime($timeCreated);
+    $currentTimestamp = time();
+    $ageInSeconds = $currentTimestamp - $timeCreatedTimestamp;
+
+    // Debug: Log the calculated age in seconds
+    error_log("Character age in seconds: $ageInSeconds");
+
+    // Check if the character meets the required age
+    if ($ageInSeconds < $requiredAgeInSeconds) {
+        $remainingSeconds = $requiredAgeInSeconds - $ageInSeconds;
+
+        // Convert remaining time to days, hours, and minutes
+        $days = floor($remainingSeconds / 86400);
+        $hours = floor(($remainingSeconds % 86400) / 3600);
+        $minutes = floor(($remainingSeconds % 3600) / 60);
+
+        return "You cannot delete this character for another $days days, $hours hours, and $minutes minutes.";
+    }
 
     // Disassociate the character by setting accid to 0
     $stmt = $conn->prepare("UPDATE chars SET accid = 0, original_accid = ? WHERE charid = ?");
     $stmt->bind_param("ii", $accountId, $charId);
-    
+
     if ($stmt->execute()) {
         $stmt->close();
         return "success";

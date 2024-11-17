@@ -22,6 +22,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['selected_charid'])) {
     header("Location: equipment.php");
     exit();
 }
+
+// Handle character deletion
+$deleteError = null;
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_charid'])) {
+    $charId = (int)$_POST['delete_charid'];
+    $deleteResult = disassociateCharacter($accid, $charId); // Call the centralized function
+
+    if ($deleteResult !== "success") {
+        $deleteError = $deleteResult; // Set the error message from the function
+    } else {
+        header("Location: dashboard.php?success=character_deleted");
+        exit();
+    }
+}
 ?>
 
 <!DOCTYPE html>
@@ -30,18 +44,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['selected_charid'])) {
     <title>Dashboard</title>
     <style>
         body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            flex-direction: column;
-            text-align: center;
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            min-height: 100vh;
-            background-color: <?= BACKGROUND_COLOUR ?>;
-            color: <?= TEXT_COLOUR ?>;
-        }
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			flex-direction: column;
+			text-align: center;
+			font-family: Arial, sans-serif;
+			margin: 0;
+			padding: 5px 0 0 0; /* Add padding at the top to move everything down */
+			min-height: 100vh;
+			background-color: <?= BACKGROUND_COLOUR ?>;
+			color: <?= TEXT_COLOUR ?>;
+		}
 
         .hidden {
             display: none;
@@ -73,10 +87,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['selected_charid'])) {
         }
 
         .main-content {
-            margin-top: -110px;
-            width: 100%;
-            max-width: 800px;
-        }
+			margin-top: -65px; 
+			width: 100%;
+			max-width: 800px;
+		}
 
         .dashboard-title {
             display: inline-block;
@@ -172,10 +186,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['selected_charid'])) {
             margin: 0;
         }
 
-        .error-message {
-            color: <?= ERROR_COLOUR ?>;
-            font-weight: bold;
-        }
+        /* Error message container */
+		.error-container {
+			min-height: 50px;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			margin-top: -10; 
+		}
+
+		.error-message {
+			color: <?= ERROR_COLOUR ?>;
+			font-weight: bold;
+		}
+
     </style>
 </head>
 <body>
@@ -183,63 +207,71 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['selected_charid'])) {
 
     <a href="logout.php" class="logout-link">Logout</a>
     <div class="main-content" id="main-content">
-        <div class="dashboard-title">Active Characters</div>
+    <div class="dashboard-title">Active Characters</div>
 
-        <?php if ($currentCharacterCount > 0): ?>
-            <ul class="character-container">
-                <?php foreach ($currentCharacters as $character): ?>
-                    <?php
-                    $raceKey = htmlspecialchars($races[$character['race']]['key']);
-                    $faceKey = htmlspecialchars($appearanceMap[$character['face']]);
-                    $imagePath = "/images/races/$raceKey/$faceKey.jpg";
+    <?php if ($currentCharacterCount > 0): ?>
+        <ul class="character-container">
+            <?php foreach ($currentCharacters as $character): ?>
+                <?php
+                $raceKey = htmlspecialchars($races[$character['race']]['key']);
+                $faceKey = htmlspecialchars($appearanceMap[$character['face']]);
+                $imagePath = "/images/races/$raceKey/$faceKey.jpg";
 
-                    // Fetch nation and rank information
-                    $nationName = getNationNameByCharId($conn, $character['charid']);
-                    $nationId = array_search($nationName, array_column($nations, 'name'));
-                    $nationRank = getNationRank($conn, $character['charid'], $nationId);
+                // Fetch nation and rank information
+                $nationName = getNationNameByCharId($conn, $character['charid']);
+                $nationId = array_search($nationName, array_column($nations, 'name'));
+                $nationRank = getNationRank($conn, $character['charid'], $nationId);
 
-                    // Fetch gil amount for character
-                    $gilAmount = getCharacterGil($conn, $character['charid']);
-                    $formattedGil = number_format($gilAmount);
-                    $gilImage = "https://static.ffxiah.com/images/icon/65535.png";
-                    ?>
-                    <li class="character-item">
-                        <form action="" method="POST">
-                            <input type="hidden" name="selected_charid" value="<?= htmlspecialchars($character['charid']) ?>">
-                            <button type="submit" style="all: unset; cursor: pointer;">
-                                <strong><?= htmlspecialchars($character['charname']) ?></strong>
-                                <p><?= htmlspecialchars($character['job_level']) ?></p>
-                                <p style="position: relative; top: 5px;">
-                                    Nation: <?= htmlspecialchars($nationName) ?> [<?= $nationRank ?? 'Unknown' ?>]
-                                </p>
-                                <img src="<?= $imagePath ?>" alt="Character Image">
-                            </button>
-                        </form>
-                        <!-- Gil Display -->
-                        <div style="display: flex; align-items: center; justify-content: center; margin-top: 10px;">
-                            <img src="<?= $gilImage ?>" alt="Gil" style="width: 24px; height: 24px; margin-right: 8px;">
-                            <span style="font-size: 1.2em; font-weight: bold; color: <?= TEXT_COLOUR ?>; position: relative; top: 15px;">
-                                <?= $formattedGil ?>
-                            </span>
-                        </div>
+                // Fetch gil amount for character
+                $gilAmount = getCharacterGil($conn, $character['charid']);
+                $formattedGil = number_format($gilAmount);
+                $gilImage = "https://static.ffxiah.com/images/icon/65535.png";
+                ?>
+                <li class="character-item">
+                    <form action="" method="POST">
+                        <input type="hidden" name="selected_charid" value="<?= htmlspecialchars($character['charid']) ?>">
+                        <button type="submit" style="all: unset; cursor: pointer;">
+                            <strong><?= htmlspecialchars($character['charname']) ?></strong>
+                            <p><?= htmlspecialchars($character['job_level']) ?></p>
+                            <p style="position: relative; top: 5px;">
+                                Nation: <?= htmlspecialchars($nationName) ?> [<?= $nationRank ?? 'Unknown' ?>]
+                            </p>
+                            <img src="<?= $imagePath ?>" alt="Character Image">
+                        </button>
+                    </form>
+                    <div style="display: flex; align-items: center; justify-content: center; margin-top: 10px;">
+                        <img src="<?= $gilImage ?>" alt="Gil" style="width: 24px; height: 24px; margin-right: 8px;">
+                        <span style="font-size: 1.2em; font-weight: bold; color: <?= TEXT_COLOUR ?>; position: relative; top: 15px;">
+                            <?= $formattedGil ?>
+                        </span>
+                    </div>
+                    <form action="" method="POST">
+                        <input type="hidden" name="delete_charid" value="<?= htmlspecialchars($character['charid']) ?>">
+                        <button type="submit" onclick="return confirm('Are you sure you want to delete this character?');" style="margin-top: 10px;">Delete</button>
+                    </form>
+                </li>
+            <?php endforeach; ?>
+        </ul>
+    <?php else: ?>
+        <p>You have no characters yet.</p>
+    <?php endif; ?>
 
-                        <form action="delete_character.php" method="POST">
-                            <input type="hidden" name="charid" value="<?= htmlspecialchars($character['charid']) ?>">
-                            <button type="submit" onclick="return confirm('Are you sure you want to delete this character?');" style="margin-top: 10px;">Delete</button>
-                        </form>
-                    </li>
-                <?php endforeach; ?>
-            </ul>
-        <?php else: ?>
-            <p>You have no characters yet.</p>
-        <?php endif; ?>
+    <!-- Add Button or Error -->
+    <?php if ($currentCharacterCount < $maxCharacters): ?>
+        <a href="select_race.php" class="create-character-btn">Create Character</a>
+    <?php else: ?>
+        <p class="error-message">You have reached the maximum number of characters (<?= $maxCharacters ?>).</p>
+    <?php endif; ?>
 
-        <?php if ($currentCharacterCount < $maxCharacters): ?>
-            <a href="select_race.php" class="create-character-btn">Create Character</a>
-        <?php else: ?>
-            <p class="error-message">You have reached the maximum number of characters (<?= $maxCharacters ?>).</p>
-        <?php endif; ?>
-    </div>
+    <!-- Display Deletion Error -->
+<div class="error-container">
+    <?php if ($deleteError): ?>
+        <p class="error-message"><?= htmlspecialchars($deleteError) ?></p>
+    <?php endif; ?>
+</div>
+
+</div>
+
 
     <script>
         const preloader = document.getElementById('preloader');

@@ -5,6 +5,10 @@ $username = "root";
 $password = "password";
 $dbname = "xidb";
 
+// Number of days since a character was first created, before it can be deleted.
+$daystodelete = 7;
+
+// Colour scheme
 define('BACKGROUND_COLOUR', '#111111');
 define('TEXT_COLOUR', '#ffffff');
 define('PLACEHOLDER_COLOUR', '#cccccc');
