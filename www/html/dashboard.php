@@ -51,7 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_charid'])) {
 			text-align: center;
 			font-family: Arial, sans-serif;
 			margin: 0;
-			padding: 5px 0 0 0; /* Add padding at the top to move everything down */
+			padding: 5px 0 0 0; 
 			min-height: 100vh;
 			background-color: <?= BACKGROUND_COLOUR ?>;
 			color: <?= TEXT_COLOUR ?>;
@@ -186,7 +186,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_charid'])) {
             margin: 0;
         }
 
-        /* Error message container */
 		.error-container {
 			min-height: 50px;
 			display: flex;

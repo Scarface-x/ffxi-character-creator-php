@@ -22,19 +22,111 @@ if (!isset($_SESSION['user_id'])) {
 $accountId = $_SESSION['user_id'];
 $maxCharacters = getMaxCharacters($accountId);
 $characterCount = getCharacterCount($accountId);
-$error = null;
+
+// PRIORITIZE: Check max character limit and exit immediately if exceeded
+if ($characterCount >= $maxCharacters) {
+    ?>
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Error</title>
+        <style>
+            body {
+                background-color: <?= BACKGROUND_COLOUR ?>;
+                color: <?= TEXT_COLOUR ?>;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                text-align: center;
+                font-family: Arial, sans-serif;
+                height: 100vh;
+                margin: 0;
+            }
+            .error-container {
+                border: 2px solid <?= ERROR_COLOUR ?>;
+                background-color: <?= BOX_BACKGROUND_COLOUR ?>;
+                padding: 20px;
+                border-radius: 8px;
+                max-width: 500px;
+                width: 80%;
+                color: <?= ERROR_COLOUR ?>;
+                font-weight: bold;
+            }
+            a {
+                color: <?= LINK_COLOUR ?>;
+                text-decoration: underline;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="error-container">
+            <strong>You have reached the character creation limit!</strong><br><br>
+            Please return to <a href="dashboard.php">Active Characters</a>.
+        </div>
+    </body>
+    </html>
+    <?php
+    exit();
+}
+
 
 // Check max character limit
 if ($characterCount >= $maxCharacters) {
     $error = "You have reached the maximum number of characters allowed.";
 }
 
-// Validate session data for character creation
 if (!isset($_SESSION['new_character']['race'], $_SESSION['new_character']['appearance'], 
           $_SESSION['new_character']['job'], $_SESSION['new_character']['nation'], 
           $_SESSION['new_character']['size'])) {
     $error = "Incomplete character creation data. Please restart the process.";
-} else {
+    ?>
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Error</title>
+        <style>
+            body {
+                background-color: <?= BACKGROUND_COLOUR ?>;
+                color: <?= TEXT_COLOUR ?>;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                text-align: center;
+                font-family: Arial, sans-serif;
+                height: 100vh;
+                margin: 0;
+            }
+            .error-container {
+                border: 2px solid <?= ERROR_COLOUR ?>;
+                background-color: <?= BOX_BACKGROUND_COLOUR ?>;
+                padding: 20px;
+                border-radius: 8px;
+                max-width: 500px;
+                width: 80%;
+                color: <?= ERROR_COLOUR ?>;
+                font-weight: bold;
+            }
+            a {
+                color: <?= LINK_COLOUR ?>;
+                text-decoration: underline;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="error-container">
+            <strong>Incomplete character creation data. Please restart the process.</strong><br><br>
+            Please go back to <a href="select_race.php">Select Race</a>.
+        </div>
+    </body>
+    </html>
+    <?php
+    exit();
+}
+ else {
     // Extract and validate each selection
     $raceId = $_SESSION['new_character']['race'];
     $appearanceId = $_SESSION['new_character']['appearance'];

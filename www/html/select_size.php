@@ -65,7 +65,7 @@ if ($limitReached) {
 $raceId = $_SESSION['new_character']['race'] ?? null;
 $appearanceId = $_SESSION['new_character']['appearance'] ?? null;
 
-// Determine gender based on race (assuming `getGenderByRace` handles null gracefully)
+// Determine gender based on race
 $gender = getGenderByRace($raceId);
 
 // Update the sizes map dynamically to assign the correct images

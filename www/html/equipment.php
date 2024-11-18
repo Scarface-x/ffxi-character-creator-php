@@ -5,7 +5,7 @@ include '/var/includes/race.php';
 include '/var/includes/job.php';
 include '/var/includes/appearance.php';
 include '/var/includes/slot.php';
-include '/var/includes/container.php';
+//include '/var/includes/container.php';
 include '/var/includes/nation.php';
 
 if (!isset($_SESSION['selected_charid'])) {
@@ -208,26 +208,7 @@ foreach ($slotMap as $slotId => $slotName) {
         <div class="grid-container">
             <div class="equipment-grid">
                 <?php
-                $slotOrder = [
-                    0 => "MAIN",
-                    1 => "SUB",
-                    2 => "RANGED",
-                    3 => "AMMO",
-                    4 => "HEAD",
-                    9 => "NECK",
-                    11 => "EAR1",
-                    12 => "EAR2",
-                    5 => "BODY",
-                    6 => "HANDS",
-                    13 => "RING1",
-                    14 => "RING2",
-                    15 => "BACK",
-                    10 => "WAIST",
-                    7 => "LEGS",
-                    8 => "FEET"
-                ];
-
-                foreach ($slotOrder as $slotId => $slotName):
+                foreach ($slotMap as $slotId => $slotName):
                 ?>
                     <div class="equipment-slot">
                         <?php
