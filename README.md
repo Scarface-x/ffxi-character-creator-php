@@ -4,7 +4,7 @@ It can also be modified to allow even more customisation, for example create a c
 
 TODO:
 
-* Send out a verification email with a link to confirm registered email.
+* Send out a verification email with a link to confirm registered email, before allowing the account to be used.
 * Allow users to change their email address.
 * Add captcha on registration.
 * Fix webpage formatting for displaying the user's characters when max players allowed is more than 3.
