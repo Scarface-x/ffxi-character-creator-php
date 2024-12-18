@@ -7,3 +7,4 @@ TODO:
 * Send out a verification email with a link to confirm registered email.
 * Allow users to change their email address.
 * Add captcha on registration.
+* Fix webpage formatting for displaying the user's characters when max players allowed is more than 3.
